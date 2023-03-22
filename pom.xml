@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#%L
+Waterfall
+%%
+Copyright (C) 2023 Alessio Ferri
+%%
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+#L%
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>it.alessio</groupId>
+    <artifactId>Waterfall</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <assertj-guava.version>3.24.1</assertj-guava.version>
+        <assertj.version>3.24.1</assertj.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <fmt-maven-plugin.version>2.13</fmt-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <jacoco.file.minimum-coverage-ratio>0.75</jacoco.file.minimum-coverage-ratio>
+        <jdepend-maven-plugin.version>2.0</jdepend-maven-plugin.version>
+        <jib-maven-plugin.version>3.3.1</jib-maven-plugin.version>
+        <jsr305.version>3.0.2</jsr305.version>
+        <junit-jupiter.version>5.9.2</junit-jupiter.version>
+        <junit.version>4.13.2</junit.version>
+        <license-maven-plugin.version>2.0.0</license-maven-plugin.version>
+        <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>3.5.0</maven-dependency-plugin.version>
+        <maven-deploy-plugin.version>3.0.0</maven-deploy-plugin.version>
+        <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
+        <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
+        <maven-install-plugin.version>3.1.0</maven-install-plugin.version>
+        <maven-invoker-plugin.version>3.4.0</maven-invoker-plugin.version>
+        <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+        <maven-javadoc-plugin.version>3.4.1</maven-javadoc-plugin.version>
+        <maven-jdeps-plugin.version>3.1.2</maven-jdeps-plugin.version>
+        <maven-jxr-plugin.version>3.3.0</maven-jxr-plugin.version>
+        <maven-plugin-plugin.version>3.7.0</maven-plugin-plugin.version>
+        <maven-project-info-reports-plugin.version>3.4.2</maven-project-info-reports-plugin.version>
+        <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+        <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
+        <maven-scm-publish-plugin.version>3.1.0</maven-scm-publish-plugin.version>
+        <maven-shade-plugin.version>3.4.1</maven-shade-plugin.version>
+        <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-surefire.version>3.0.0-M8</maven-surefire.version>
+        <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <reproducible-build-maven-plugin.version>0.16</reproducible-build-maven-plugin.version>
+        <revision>development-SNAPSHOT</revision>
+        <slf4j.version>2.0.7</slf4j.version>
+        <spotbugs-maven-plugin.version>4.7.3.0</spotbugs-maven-plugin.version>
+        <!-- JaCoCo code coverage check -->
+        <jacoco.file.minimum-coverage-ratio>0.75</jacoco.file.minimum-coverage-ratio>
+        <jacoco.skip>false</jacoco.skip>
+
+        <java.require.version>17</java.require.version>
+        <java.target.version>17</java.target.version>
+        <maven.compiler.source>17</maven.compiler.source>
+
+        <!-- Check dependencies are used, declared and have the correct scope -->
+        <mdep.analyze.skip>false</mdep.analyze.skip>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit</groupId>
+            <artifactId>junit-bom</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.2.1</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <inherited>false</inherited>
+                <version>3.5.0</version>
+                <configuration>
+                    <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                    <streamLogs>true</streamLogs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>install</goal>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>2.0.0</version>
+                <configuration>
+                    <projectName>Waterfall</projectName>
+                    <licenseName>apache_v2</licenseName>
+                    <extraExtensions>
+                        <kt>java</kt>
+                    </extraExtensions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>config</id>
+                        <goals>
+                            <goal>update-file-header</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                        <configuration>
+                            <roots>${basedir}</roots>
+                            <includes>.editorconfig,.gitattributes,pom.xml</includes>
+                            <extraExtensions>
+                                <editorconfig>properties</editorconfig>
+                                <gitattributes>properties</gitattributes>
+                                <yml>properties</yml>
+                            </extraExtensions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>sources</id>
+                        <goals>
+                            <goal>update-file-header</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <fork>true</fork>
+                    <executable>${JAVA_17_HOME}/bin/javac</executable>
+                    <release>17</release>
+                    <compilerVersion>17</compilerVersion>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire.version}</version>
+                <configuration>
+                    <jvm>${JAVA_17_HOME}/bin/java</jvm>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <licenses>
+        <license>
+            <name>apache_v2</name>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Alessio Ferri</name>
+        </developer>
+    </developers>
+
+    <inceptionYear>2023</inceptionYear>
+
+    <organization>
+        <name>Alessio Ferri</name>
+    </organization>
+
+</project>
