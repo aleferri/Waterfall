@@ -51,8 +51,12 @@ public record TestPlan(String title, Collection<Stage> stages, Collection<TestLi
         return new TestPlan( title, new ArrayList<>(), new ArrayList<>() );
     }
 
+    public void link(Stage a, Stage b, Delay delay) {
+        this.links.add( new TestLink( a.stageId(), b.stageId(), delay ) );
+    }
+
     public void link(Stage a, Stage b) {
-        this.links.add( new TestLink( a.stageId(), b.stageId() ) );
+        this.links.add( new TestLink( a.stageId(), b.stageId(), Delay.none() ) );
     }
 
     @Override

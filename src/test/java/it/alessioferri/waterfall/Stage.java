@@ -44,8 +44,4 @@ package it.alessioferri.waterfall;
  */
 public interface Stage extends FlowStage<StageKind> {
 
-    public default boolean shouldReshedule() {
-        return !this.delay().isNone();
-    }
-
 }

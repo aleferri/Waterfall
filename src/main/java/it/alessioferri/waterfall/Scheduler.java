@@ -46,7 +46,7 @@ import java.util.Collection;
  * @param <S>
  * @param <L>
  */
-public interface Scheduler<E extends Enum, S extends FlowStage<E>, L extends Link> {
+public interface Scheduler<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Started at

@@ -42,7 +42,7 @@ package it.alessioferri.waterfall;
  * @param <E>
  * @param <S>
  */
-public interface Dispatcher<E extends Enum, S extends FlowStage<E>> {
+public interface Dispatcher<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Get callbacks for the stage s
@@ -50,6 +50,6 @@ public interface Dispatcher<E extends Enum, S extends FlowStage<E>> {
      * @param kind
      * @return
      */
-    public CallbacksTable<E, S> callbacksFor(E kind);
+    public CallbacksTable<E, S, L> callbacksFor(E kind);
 
 }

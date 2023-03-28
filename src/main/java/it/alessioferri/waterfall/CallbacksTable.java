@@ -18,6 +18,7 @@
  */
 package it.alessioferri.waterfall;
 
+import java.util.Collection;
 /*-
  * #%L
  * Waterfall
@@ -38,13 +39,14 @@ package it.alessioferri.waterfall;
  * #L%
  */
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Alessio
  * @param <E>
  * @param <S>
  */
-public interface CallbacksTable<E extends Enum, S extends FlowStage<E>> {
+public interface CallbacksTable<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Called when the dependencies of the stage are updated
@@ -55,7 +57,18 @@ public interface CallbacksTable<E extends Enum, S extends FlowStage<E>> {
      * per wave)
      * @return stage status for the wave
      */
-    public StageStatus onDepsUpdates(TasksWave wave, S stage, List<Long> deps);
+    public StageStatus<E, S, L> onDepsUpdates(TasksWave<E, S, L> wave, S stage, List<Long> deps);
+
+    /**
+     * Called when a finished future stage has a backward link to a past stage
+     * 
+     * @param wave wave for wich the status is to be evaluated
+     * @param stage stage to be evaluated
+     * @param deps ids of the dependencies (only one stage materialized as task
+     * per wave)
+     * @return maybe a new wave otherwise the same wave
+     */
+    public Optional<WaveStartData<E, S>> onBackwardLinkUpdate(TasksWave<E, S, L> wave, S stage, Collection<L> incomings, long linkDep);
 
     /**
      * Activate the related task for the stage in the specified wave
@@ -65,7 +78,7 @@ public interface CallbacksTable<E extends Enum, S extends FlowStage<E>> {
      * @return a new TaskSnapshot, the real task object is out of the this
      * library scope
      */
-    public TaskSnapshot activateRelatedTask(TasksWave wave, S stage);
+    public TaskSnapshot activateRelatedTask(TasksWave<E, S, L> wave, S stage, Collection<L> incomings);
 
     /**
      * After the task has been completed
@@ -76,6 +89,6 @@ public interface CallbacksTable<E extends Enum, S extends FlowStage<E>> {
      * @return a new TaskWave if the stage was to be rescheduled at a later time
      * or the same wave otherwise
      */
-    public TasksWave onEnd(TasksWave wave, TaskResult result, S stage);
+    public TasksWave<E, S, L> onEnd(TasksWave<E, S, L> wave, TaskResult result, S stage);
 
 }

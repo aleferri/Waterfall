@@ -48,7 +48,7 @@ import java.util.Map;
  * @param <S>
  * @param <L>
  */
-public interface TasksWave<E extends Enum, S extends FlowStage<E>, L extends Link> {
+public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Parent Thread id
@@ -179,5 +179,34 @@ public interface TasksWave<E extends Enum, S extends FlowStage<E>, L extends Lin
      * @return a shallow copy with a different id
      */
     public TasksWave<E, S, L> withWaveId(long waveId);
+
+    public default Delay selectDelayFor(S s, DelayPolicy policy, Collection<L> incomings, TaskResult target) {
+        if ( incomings.isEmpty() ) {
+            return Delay.none();
+        }
+
+        var delay = policy == DelayPolicy.SHORTEST_DELAY ? Delay.max() : Delay.none();
+
+        for (var i : incomings) {
+
+            var status = this.snapshotOfStage(i.from());
+
+            if ( !status.status().isFinished() || status.result() != target ) {
+                continue;
+            }
+
+            if ( policy == DelayPolicy.SHORTEST_DELAY ) {
+                if ( i.delay().lessThan(delay) ) {
+                    delay = i.delay();
+                }
+            } else {
+                if ( i.delay().greaterThan(delay) ) {
+                    delay = i.delay();
+                }
+            }
+        }
+
+        return delay;
+    }
 
 }

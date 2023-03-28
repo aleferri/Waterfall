@@ -40,6 +40,9 @@ package it.alessioferri.waterfall;
 
 /** @author Alessio */
 public enum TaskResult {
-  SUCCESS,
-  FAIL;
+
+    NONE,
+    SUCCESS,
+    FAIL;
+
 }

@@ -46,11 +46,11 @@ import java.time.LocalDate;
 public record TaskSnapshot(long taskId, long stageId, LocalDate takenAt, TaskStatus status, TaskResult result) {
 
     public static TaskSnapshot activated(long taskId, long stageId) {
-        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.READY, TaskResult.SUCCESS );
+        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.READY, TaskResult.NONE);
     }
 
     public static TaskSnapshot later(long taskId, long stageId, Delay delay) {
-        return new TaskSnapshot( taskId, stageId, delay.applyTo( LocalDate.now() ), TaskStatus.INITIALIZED, TaskResult.SUCCESS );
+        return new TaskSnapshot( taskId, stageId, delay.applyTo( LocalDate.now() ), TaskStatus.INITIALIZED, TaskResult.NONE );
     }
 
     public static TaskSnapshot succeeded(long taskId, long stageId) {
@@ -62,7 +62,7 @@ public record TaskSnapshot(long taskId, long stageId, LocalDate takenAt, TaskSta
     }
 
     public static TaskSnapshot skipped(long taskId, long stageId) {
-        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.SKIPPED, TaskResult.FAIL );
+        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.SKIPPED, TaskResult.NONE );
     }
 
 }

@@ -42,6 +42,6 @@ package it.alessioferri.waterfall;
  *
  * @author Alessio
  */
-public record TestLink(long from, long to) implements Link {
+public record TestLink(long from, long to, Delay delay) implements Link {
 
 }

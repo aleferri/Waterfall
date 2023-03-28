@@ -56,4 +56,11 @@ public interface Link {
      */
     public long to();
 
+    /**
+     * Delay of the link
+     * 
+     * @return
+     */
+    public Delay delay();
+
 }

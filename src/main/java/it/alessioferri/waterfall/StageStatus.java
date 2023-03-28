@@ -42,6 +42,6 @@ package it.alessioferri.waterfall;
  *
  * @author Alessio
  */
-public record StageStatus(TasksWave maybeNew, boolean canActivate) {
+public record StageStatus<E extends Enum<E>, S extends FlowStage<E>, L extends Link>(TasksWave<E, S, L> maybeNew, boolean canActivate) {
 
 }

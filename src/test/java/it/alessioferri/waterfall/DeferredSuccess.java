@@ -42,6 +42,6 @@ package it.alessioferri.waterfall;
  *
  * @author Alessio
  */
-public record DeferredSuccess(long stageId, StageKind kind, Delay delay) implements Stage {
+public record DeferredSuccess(long stageId, StageKind kind, DelayPolicy delayPolicy) implements Stage {
 
 }

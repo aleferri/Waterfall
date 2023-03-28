@@ -18,6 +18,7 @@
  */
 package it.alessioferri.waterfall;
 
+import java.util.Collection;
 /*-
  * #%L
  * Waterfall
@@ -38,19 +39,20 @@ package it.alessioferri.waterfall;
  * #L%
  */
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
  *
  * @author Alessio
  */
-public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<StageKind, Stage>, Dispatcher<StageKind, Stage> {
+public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<StageKind, Stage, TestLink>, Dispatcher<StageKind, Stage, TestLink> {
 
     @Override
-    public StageStatus onDepsUpdates(TasksWave wave, Stage stage, List<Long> deps) {
+    public StageStatus<StageKind, Stage, TestLink> onDepsUpdates(TasksWave<StageKind, Stage, TestLink> wave, Stage stage, List<Long> deps) {
         switch ( stage.kind() ) {
             case START -> {
-                return new StageStatus( wave, true );
+                return new StageStatus<>( wave, true );
             }
             case EXECUTE_ONLY_IF_ALL_FAIL -> {
                 boolean allFailed = true;
@@ -70,11 +72,7 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
                     wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
                 }
 
-                if ( allFailed && !stage.delay().isNone() ) {
-                    return new StageStatus( TasksWaveDefault.<StageKind, Stage, TestLink>initWave( -1, wave.waveId() ), allFailed );
-                }
-
-                return new StageStatus( wave, allFailed );
+                return new StageStatus<>( wave, allFailed );
             }
             case EXECUTE_ONLY_IF_ALL_SUCCESS -> {
                 boolean allSuccess = true;
@@ -94,11 +92,7 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
                     wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
                 }
 
-                if ( allSuccess && !stage.delay().isNone() ) {
-                    return new StageStatus( TasksWaveDefault.<StageKind, Stage, TestLink>initWave( -1, wave.waveId() ), allSuccess );
-                }
-
-                return new StageStatus( wave, allSuccess );
+                return new StageStatus<>( wave, allSuccess );
             }
             case EXECUTE_ONLY_IF_ANY_SUCCESS -> {
                 boolean anySuccess = false;
@@ -117,11 +111,7 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
                     wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
                 }
 
-                if ( anySuccess && !stage.delay().isNone() ) {
-                    return new StageStatus( TasksWaveDefault.<StageKind, Stage, TestLink>initWave( -1, wave.waveId() ), anySuccess );
-                }
-
-                return new StageStatus( wave, anySuccess );
+                return new StageStatus<>( wave, anySuccess );
             }
             case EXECUTE_ONLY_IF_ANY_FAIL -> {
                 boolean anyFail = false;
@@ -140,14 +130,10 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
                     wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
                 }
 
-                if ( anyFail && !stage.delay().isNone() ) {
-                    return new StageStatus( TasksWaveDefault.<StageKind, Stage, TestLink>initWave( -1, wave.waveId() ), anyFail );
-                }
-
-                return new StageStatus( wave, anyFail );
+                return new StageStatus<>( wave, anyFail );
             }
             case END -> {
-                return new StageStatus( wave, true );
+                return new StageStatus<>( wave, true );
             }
             default ->
                 throw new AssertionError( stage.kind().name() );
@@ -155,9 +141,27 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
     }
 
     @Override
-    public TaskSnapshot activateRelatedTask(TasksWave wave, Stage stage) {
-        if ( !stage.delay().isNone() ) {
-            return TaskSnapshot.later( this.taskIds.get(), stage.stageId(), stage.delay() );
+    public TaskSnapshot activateRelatedTask(TasksWave<StageKind, Stage, TestLink> wave, Stage stage, Collection<TestLink> incomings) {
+        Delay delay;
+
+        switch(stage.kind()) {
+            case END, START -> {
+                delay = Delay.none();
+            }
+            case EXECUTE_ONLY_IF_ALL_FAIL, EXECUTE_ONLY_IF_ANY_FAIL -> {
+                delay = wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.FAIL);
+            }
+            case EXECUTE_ONLY_IF_ALL_SUCCESS, EXECUTE_ONLY_IF_ANY_SUCCESS -> {
+                delay = wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.SUCCESS);
+            }
+            default -> {
+                delay = Delay.none();
+            }
+        }
+        
+        
+        if ( !delay.isNone() ) {
+            return TaskSnapshot.later( this.taskIds.get(), stage.stageId(), delay );
         }
 
         if ( stage instanceof ImmediateFail ) {
@@ -184,13 +188,56 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
     }
 
     @Override
-    public TasksWave onEnd(TasksWave wave, TaskResult result, Stage stage) {
+    public TasksWave<StageKind, Stage, TestLink> onEnd(TasksWave<StageKind, Stage, TestLink> wave, TaskResult result, Stage stage) {
         throw new UnsupportedOperationException( "Not supported yet." ); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public CallbacksTable<StageKind, Stage> callbacksFor(StageKind kind) {
+    public CallbacksTable<StageKind, Stage, TestLink> callbacksFor(StageKind kind) {
         return this;
+    }
+
+    @Override
+    public Optional<WaveStartData<StageKind, Stage>> onBackwardLinkUpdate(TasksWave<StageKind, Stage, TestLink> wave,
+            Stage stage, Collection<TestLink> incomings, long linkDep) {
+                switch ( stage.kind() ) {
+                    case START, END -> {
+                        return Optional.of( WaveStartData.prepare(wave.waveId(), Delay.none(), stage) );
+                    }
+                    case EXECUTE_ONLY_IF_ALL_FAIL, EXECUTE_ONLY_IF_ALL_SUCCESS -> {
+                        return Optional.empty();
+                    }
+                    case EXECUTE_ONLY_IF_ANY_SUCCESS -> {
+
+                        if ( wave.hasRelatedTask( linkDep ) ) {
+                            var snapshot = wave.snapshotOfStage( linkDep );
+                            var anySuccess = snapshot.status().isFinished() && snapshot.result() == TaskResult.SUCCESS;
+
+                            if (anySuccess) {
+                                return Optional.of( WaveStartData.prepare(wave.waveId(), Delay.none(), stage) );
+                            }
+
+                        }
+        
+                        return Optional.empty();
+                    }
+                    case EXECUTE_ONLY_IF_ANY_FAIL -> {
+        
+                        if ( wave.hasRelatedTask( linkDep ) ) {
+                            var snapshot = wave.snapshotOfStage( linkDep );
+                            var anyFail = snapshot.status().isFinished() && snapshot.result() == TaskResult.FAIL;
+
+                            if (anyFail) {
+                                return Optional.of( WaveStartData.prepare(wave.waveId(), Delay.none(), stage) );
+                            }
+
+                        }
+        
+                        return Optional.empty();
+                    }
+                    default ->
+                        throw new AssertionError( stage.kind().name() );
+                }
     }
 
 }

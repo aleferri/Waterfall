@@ -18,6 +18,7 @@
  */
 package it.alessioferri.waterfall;
 
+import java.util.ArrayList;
 /*-
  * #%L
  * Waterfall
@@ -38,6 +39,8 @@ package it.alessioferri.waterfall;
  * #L%
  */
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Alessio
@@ -45,7 +48,7 @@ import java.util.Collection;
  * @param <S> FlowStage type
  * @param <L> Link type
  */
-public interface FlowPlan<E extends Enum, S extends FlowStage<E>, L extends Link> {
+public interface FlowPlan<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Title of the plan
@@ -114,5 +117,50 @@ public interface FlowPlan<E extends Enum, S extends FlowStage<E>, L extends Link
      * @return
      */
     public S followFrom(L link);
+
+    /**
+     * Explore the next stages in a breadth first kind
+     * 
+     * @param origins root set
+     * @return the stages immediately after the root set
+     */
+    public default Collection<S> nextStagesBreadthFirst(Collection<S> origins) {
+        var list = new ArrayList<S>();
+
+        for (var origin : origins) {
+            var links = this.outgoings(origin);
+            for (var link : links) {
+                list.add(this.followTo(link));
+            }
+        }
+
+        return list;
+    }
+
+    /**
+     * Breadth first exploration
+     * 
+     * @return a map with sequence numbers linked to the stage
+     */
+    public default Map<Long, Long> sequenceStages() {
+        var map = new HashMap<Long, Long>();
+
+        long s = 0;
+
+        var iteration = this.startSet();
+
+        while ( !iteration.isEmpty() ) {
+            for (var i : iteration) {
+                if (!map.containsKey(i.stageId())) {
+                    map.put(i.stageId(), s);
+                    s++;
+                }
+            }
+
+            iteration = this.nextStagesBreadthFirst(iteration);
+        }
+
+        return map;
+    }
 
 }

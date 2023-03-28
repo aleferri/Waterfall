@@ -47,6 +47,10 @@ import java.time.temporal.ChronoUnit;
  */
 public record Delay(int years, int months, int days) {
 
+    public static Delay max() {
+        return new Delay( 99999, 0, 0 );
+    }
+
     public static Delay none() {
         return new Delay( 0, 0, 0 );
     }
@@ -71,6 +75,18 @@ public record Delay(int years, int months, int days) {
             return true;
         }
         return days < b.days;
+    }
+
+    public boolean greaterThan(Delay b) {
+        if ( years > b.years ) {
+            return true;
+        }
+
+        if ( months > b.months ) {
+            return true;
+        }
+
+        return days > b.days;
     }
 
     public boolean isNone() {

@@ -41,27 +41,27 @@ package it.alessioferri.waterfall;
  * @author Alessio
  * @param <E> Enumeration for block type identification
  */
-public interface FlowStage<E extends Enum> {
+public interface FlowStage<E extends Enum<E>> {
 
     /**
      * FlowStage id
      *
-     * @return
+     * @return id for the stage
      */
     public long stageId();
 
     /**
      * FlowStage kind
      *
-     * @return
+     * @return kind of stage
      */
     public E kind();
 
     /**
-     * Task instantiation delay
-     *
-     * @return
+     * Delay policy, when multiple links points to the same stage, select delay based on the stage policy
+     * 
+     * @return policy for delay when multiple delays are possible
      */
-    public Delay delay();
+    public DelayPolicy delayPolicy();
 
 }
