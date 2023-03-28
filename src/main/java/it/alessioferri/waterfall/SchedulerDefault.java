@@ -108,9 +108,11 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
 
         for ( var outgoing : outgoings ) {
             var follow = this.plan.followTo( outgoing );
-            reachableSet.add( follow );
 
-            this.markReachableSet( reachableSet, follow );
+            if ( !reachableSet.contains( follow ) ) {
+                reachableSet.add( follow );
+                this.markReachableSet( reachableSet, follow );
+            }
         }
     }
 
@@ -123,17 +125,18 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
      * @return a new TasksWave with the speficied parameter
      */
     private TasksWaveDefault<E, S, L> kickoffWave(long waveId, long parentId, Delay waveDelay, Collection<S> startSet) {
-        var wave = TasksWaveDefault.<E, S, L>initWave( waveId, parentId, waveDelay );
+        var wave = TasksWaveDefault.<E, S, L>initWave( waveId, parentId );
 
         var reachableSet = new HashSet<S>();
         reachableSet.addAll( startSet );
 
         for ( var e : startSet ) {
+            System.out.println(e);
             log.debug( "Processing: " + e.stageId() );
 
             this.markReachableSet( reachableSet, e );
 
-            var snapshot = this.dispatcher.callbacksFor( e.kind() ).activateRelatedTask( wave, e, Collections.emptyList() );
+            var snapshot = this.dispatcher.callbacksFor( e.kind() ).activateRelatedTask( wave, e, Collections.emptyList(), waveDelay );
             wave.addSnapshot( snapshot );
             wave.cursors().add( e.stageId() );
 
@@ -186,6 +189,8 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
                     var callbacks = this.dispatcher.callbacksFor( next.kind() );
 
                     if ( this.isBackwardLink(link) ) {
+                        System.out.println("This is backward link");
+
                         var maybeNewWave = callbacks.onBackwardLinkUpdate( t, next, incomings, link.from() );
 
                         if ( maybeNewWave.isPresent() ) {
@@ -197,7 +202,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
                         var result = callbacks.onDepsUpdates( t, next, deps );
 
                         if ( result.canActivate() ) {
-                            var snapshot = callbacks.activateRelatedTask( t, next, incomings );
+                            var snapshot = callbacks.activateRelatedTask( t, next, incomings, Delay.none() );
                             t.addSnapshot( snapshot );
                             t.cursors().add( next.stageId() );
                         }

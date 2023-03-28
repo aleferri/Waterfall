@@ -59,10 +59,10 @@ public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L exte
         Map<String, Object> scratchpad,
         Map<Long, TaskSnapshot> snapshot,
         Collection<TaskSnapshot> history,
-        List<Long> cursors,
-        Delay waveDelay) implements TasksWave<E, B, L> {
+        List<Long> cursors) implements TasksWave<E, B, L> {
 
-    public static <E extends Enum<E>, B extends FlowStage<E>, L extends Link> TasksWaveDefault<E, B, L> initWave(long waveId, long parentWaveId, Delay delay) {
+    public static <E extends Enum<E>, B extends FlowStage<E>, L extends Link> TasksWaveDefault<E, B, L> initWave(long waveId, long parentWaveId) {
+        System.out.println("Init wave");
         return new TasksWaveDefault<>(
                 waveId,
                 parentWaveId,
@@ -71,8 +71,7 @@ public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L exte
                 new HashMap<>(),
                 new HashMap<>(),
                 new ArrayList<>(),
-                new ArrayList<>(),
-                delay
+                new ArrayList<>()
         );
     }
 
@@ -97,7 +96,7 @@ public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L exte
 
     @Override
     public TasksWave<E, B, L> withWaveId(long waveId) {
-        return new TasksWaveDefault<>( waveId, parentWaveId, startedAt, resources, scratchpad, snapshot, history, cursors, waveDelay );
+        return new TasksWaveDefault<>( waveId, parentWaveId, startedAt, resources, scratchpad, snapshot, history, cursors );
     }
 
     @Override

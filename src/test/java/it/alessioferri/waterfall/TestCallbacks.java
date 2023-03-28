@@ -141,27 +141,24 @@ public record TestCallbacks(Supplier<Long> taskIds) implements CallbacksTable<St
     }
 
     @Override
-    public TaskSnapshot activateRelatedTask(TasksWave<StageKind, Stage, TestLink> wave, Stage stage, Collection<TestLink> incomings) {
-        Delay delay;
+    public TaskSnapshot activateRelatedTask(TasksWave<StageKind, Stage, TestLink> wave, Stage stage, Collection<TestLink> incomings, Delay delay) {
+        
+        Delay delaySum = delay;
 
         switch(stage.kind()) {
-            case END, START -> {
-                delay = Delay.none();
-            }
             case EXECUTE_ONLY_IF_ALL_FAIL, EXECUTE_ONLY_IF_ANY_FAIL -> {
-                delay = wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.FAIL);
+                delaySum = delay.add( wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.FAIL) );
             }
             case EXECUTE_ONLY_IF_ALL_SUCCESS, EXECUTE_ONLY_IF_ANY_SUCCESS -> {
-                delay = wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.SUCCESS);
+                delaySum = delay.add( wave.selectDelayFor(stage, stage.delayPolicy(), incomings, TaskResult.SUCCESS) );
             }
             default -> {
-                delay = Delay.none();
+                delaySum = delay;
             }
         }
         
-        
-        if ( !delay.isNone() ) {
-            return TaskSnapshot.later( this.taskIds.get(), stage.stageId(), delay );
+        if ( !delaySum.isNone() ) {
+            return TaskSnapshot.later( this.taskIds.get(), stage.stageId(), delaySum );
         }
 
         if ( stage instanceof ImmediateFail ) {

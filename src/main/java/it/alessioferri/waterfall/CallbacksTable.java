@@ -78,7 +78,7 @@ public interface CallbacksTable<E extends Enum<E>, S extends FlowStage<E>, L ext
      * @return a new TaskSnapshot, the real task object is out of the this
      * library scope
      */
-    public TaskSnapshot activateRelatedTask(TasksWave<E, S, L> wave, S stage, Collection<L> incomings);
+    public TaskSnapshot activateRelatedTask(TasksWave<E, S, L> wave, S stage, Collection<L> incomings, Delay delay);
 
     /**
      * After the task has been completed

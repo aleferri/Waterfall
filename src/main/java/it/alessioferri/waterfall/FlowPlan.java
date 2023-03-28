@@ -150,12 +150,19 @@ public interface FlowPlan<E extends Enum<E>, S extends FlowStage<E>, L extends L
         var iteration = this.startSet();
 
         while ( !iteration.isEmpty() ) {
+
+            var toRemove = new ArrayList<S>();
+
             for (var i : iteration) {
                 if (!map.containsKey(i.stageId())) {
                     map.put(i.stageId(), s);
                     s++;
+                } else {
+                    toRemove.add(i);
                 }
             }
+
+            iteration.removeAll(toRemove);
 
             iteration = this.nextStagesBreadthFirst(iteration);
         }

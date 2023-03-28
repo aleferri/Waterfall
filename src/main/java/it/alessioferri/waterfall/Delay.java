@@ -47,10 +47,17 @@ import java.time.temporal.ChronoUnit;
  */
 public record Delay(int years, int months, int days) {
 
+    /**
+     * Max delay possible
+     */
     public static Delay max() {
         return new Delay( 99999, 0, 0 );
     }
 
+    /**
+     * None delay
+     * @return a "none" delay
+     */
     public static Delay none() {
         return new Delay( 0, 0, 0 );
     }
@@ -91,6 +98,10 @@ public record Delay(int years, int months, int days) {
 
     public boolean isNone() {
         return years == 0 && months == 0 && days == 0;
+    }
+
+    public Delay add(Delay b) {
+        return new Delay(this.years + b.years, this.months + b.months, this.days + b.days);
     }
 
 }

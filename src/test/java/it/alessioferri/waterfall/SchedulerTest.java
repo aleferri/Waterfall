@@ -209,25 +209,30 @@ public class SchedulerTest {
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
-        for ( var w : sched.runningWaves() ) {
+        for ( int k = 0; k < 3; k++ ) { // in theory, only two kicks are required to finish this plan
 
-            var toInsert = new ArrayList<TaskSnapshot>();
+            for ( var w : sched.runningWaves() ) {
 
-            for ( var e : w.snapshot().entrySet() ) {
-                var s = e.getValue();
-                if ( s.status().isActive() ) {
-                    toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
+                var toInsert = new ArrayList<TaskSnapshot>();
+
+                for ( var e : w.snapshot().entrySet() ) {
+                    var s = e.getValue();
+                    if ( s.status().isActive() ) {
+                        toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
+                    }
                 }
+
+                for ( var i : toInsert ) {
+                    w.addSnapshot( i );
+                }
+
+                System.out.println("Before: " + w.cursors());
             }
 
-            for ( var i : toInsert ) {
-                w.addSnapshot( i );
-            }
-        }
+            sched.updateWaves();
+        }        
 
-        sched.updateWaves();
-
-        Assertions.assertTrue( sched.waves().size() > 1 );
+        Assertions.assertEquals( sched.waves().size(), 2 );
         Assertions.assertFalse( sched.isComplete() );
     }
 
