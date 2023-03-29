@@ -50,6 +50,6 @@ public interface Dispatcher<E extends Enum<E>, S extends FlowStage<E>, L extends
      * @param kind
      * @return
      */
-    public CallbacksTable<E, S, L> callbacksFor(E kind);
+    public TaskScheduler<E, S, L> callbacksFor(E kind);
 
 }

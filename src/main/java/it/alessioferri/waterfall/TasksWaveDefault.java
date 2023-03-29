@@ -62,7 +62,6 @@ public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L exte
         List<Long> cursors) implements TasksWave<E, B, L> {
 
     public static <E extends Enum<E>, B extends FlowStage<E>, L extends Link> TasksWaveDefault<E, B, L> initWave(long waveId, long parentWaveId) {
-        System.out.println("Init wave");
         return new TasksWaveDefault<>(
                 waveId,
                 parentWaveId,

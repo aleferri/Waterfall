@@ -45,12 +45,13 @@ import java.time.LocalDate;
  */
 public record TaskSnapshot(long taskId, long stageId, LocalDate takenAt, TaskStatus status, TaskResult result) {
 
-    public static TaskSnapshot activated(long taskId, long stageId) {
-        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.READY, TaskResult.NONE);
+    public static TaskSnapshot scheduledNow(long taskId, long stageId) {
+        return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.READY, TaskResult.NONE );
     }
 
-    public static TaskSnapshot later(long taskId, long stageId, Delay delay) {
-        return new TaskSnapshot( taskId, stageId, delay.applyTo( LocalDate.now() ), TaskStatus.INITIALIZED, TaskResult.NONE );
+    public static TaskSnapshot scheduledLater(long taskId, long stageId, Delay delay) {
+        return new TaskSnapshot( taskId, stageId, delay.applyTo( LocalDate.now() ), TaskStatus.SCHEDULED,
+                TaskResult.NONE );
     }
 
     public static TaskSnapshot succeeded(long taskId, long stageId) {

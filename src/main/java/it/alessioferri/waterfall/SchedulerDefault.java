@@ -51,30 +51,25 @@ import org.slf4j.Logger;
  *
  * @author Alessio
  */
-public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L extends Link>(
-        FlowPlan<E, S, L> plan,
-        Map<Long, Long> sequence,
-        List<TasksWave<E, S, L>> waves,
-        Dispatcher<E, S, L> dispatcher,
-        Logger log) implements Scheduler<E, S, L> {
+public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L extends Link>(FlowPlan<E, S, L> plan,
+        Map<Long, Long> sequence, List<TasksWave<E, S, L>> waves, Dispatcher<E, S, L> dispatcher, Logger log)
+        implements Scheduler<E, S, L> {
 
     /**
      * Kickoff a new SchedulerDefault
      *
-     * @param <E> Enum type
-     * @param <S> FlowStage with E as its' kind
-     * @param <L> Link
-     * @param plan plan to be followed
+     * @param <E>        Enum type
+     * @param <S>        FlowStage with E as its' kind
+     * @param <L>        Link
+     * @param plan       plan to be followed
      * @param dispatcher dispatcher for callbacks
-     * @param log logger for the debug information
+     * @param log        logger for the debug information
      * @return a scheduler for the plan
      */
     public static <E extends Enum<E>, S extends FlowStage<E>, L extends Link> SchedulerDefault<E, S, L> kickoff(
-            FlowPlan<E, S, L> plan,
-            Dispatcher<E, S, L> dispatcher,
-            Logger log
-    ) {
-        var scheduler = new SchedulerDefault<E, S, L>( plan, plan.sequenceStages(), new ArrayList<>(), dispatcher, log );
+            FlowPlan<E, S, L> plan, Dispatcher<E, S, L> dispatcher, Logger log) {
+        var scheduler = new SchedulerDefault<E, S, L>( plan, plan.sequenceStages(), new ArrayList<>(), dispatcher,
+                log );
         var entry = scheduler.kickoffWave( 0, -1, Delay.none(), plan.startSet() );
         scheduler.waves.add( entry );
         scheduler.updateWaves();
@@ -91,8 +86,8 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
     }
 
     private boolean isBackwardLink(Link link) {
-        var start = this.sequence.get(link.from());
-        var end = this.sequence.get(link.to());
+        var start = this.sequence.get( link.from() );
+        var end = this.sequence.get( link.to() );
 
         return start >= end;
     }
@@ -101,7 +96,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
      * Mark the reachable set of stages from the starting set
      *
      * @param reachableSet current reachable set
-     * @param cursor forward cursor to explore the graph
+     * @param cursor       forward cursor to explore the graph
      */
     private void markReachableSet(Collection<S> reachableSet, S cursor) {
         var outgoings = this.plan.outgoings( cursor );
@@ -119,7 +114,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
     /**
      * Kickoff a new wave
      *
-     * @param waveId initial wave id
+     * @param waveId   initial wave id
      * @param parentId parent wave id
      * @param startSet start set of stages
      * @return a new TasksWave with the speficied parameter
@@ -131,12 +126,13 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
         reachableSet.addAll( startSet );
 
         for ( var e : startSet ) {
-            System.out.println(e);
+            System.out.println( e );
             log.debug( "Processing: " + e.stageId() );
 
             this.markReachableSet( reachableSet, e );
 
-            var snapshot = this.dispatcher.callbacksFor( e.kind() ).activateRelatedTask( wave, e, Collections.emptyList(), waveDelay );
+            var snapshot = this.dispatcher.callbacksFor( e.kind() ).scheduleTaskFor( wave, e, Collections.emptyList(),
+                    waveDelay );
             wave.addSnapshot( snapshot );
             wave.cursors().add( e.stageId() );
 
@@ -169,12 +165,13 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
 
             var taskSnapshot = t.snapshotOfStage( stage.stageId() );
 
-            System.out.println( cursor + " " + "Task status is: " + taskSnapshot.status().name() );
+            System.out.println( this.plan.title() + " cursor: " + cursor + ", Task status is: " + taskSnapshot.status().name() );
             log.debug( "Task status is: " + taskSnapshot.status().name() );
 
             if ( taskSnapshot.status().isFinished() ) {
 
                 var links = this.plan.outgoings( stage );
+                System.out.println("Outgoings: " + links);
 
                 for ( var link : links ) {
 
@@ -188,21 +185,20 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
 
                     var callbacks = this.dispatcher.callbacksFor( next.kind() );
 
-                    if ( this.isBackwardLink(link) ) {
-                        System.out.println("This is backward link");
-
+                    if ( this.isBackwardLink( link ) ) {
                         var maybeNewWave = callbacks.onBackwardLinkUpdate( t, next, incomings, link.from() );
 
                         if ( maybeNewWave.isPresent() ) {
                             var data = maybeNewWave.get();
-                            this.waves.add( this.kickoffWave( this.waves.size(), data.parentWave(), data.waveDelay(), data.startSet() ) );
+                            this.waves.add( this.kickoffWave( this.waves.size(), data.parentWave(), data.waveDelay(),
+                                    data.startSet() ) );
                         }
-                        
+
                     } else {
                         var result = callbacks.onDepsUpdates( t, next, deps );
 
                         if ( result.canActivate() ) {
-                            var snapshot = callbacks.activateRelatedTask( t, next, incomings, Delay.none() );
+                            var snapshot = callbacks.scheduleTaskFor( t, next, incomings, Delay.none() );
                             t.addSnapshot( snapshot );
                             t.cursors().add( next.stageId() );
                         }
@@ -211,7 +207,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
                             this.waves.add( result.maybeNew().withWaveId( this.waves.size() ) );
                         }
                     }
-                    
+
                 }
 
                 t.cursors().remove( i );

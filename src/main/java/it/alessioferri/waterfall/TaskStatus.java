@@ -42,23 +42,18 @@ package it.alessioferri.waterfall;
  */
 public enum TaskStatus {
 
-    QUEUED,
-    INITIALIZED,
-    READY,
-    ASSIGNED,
-    COMPLETED,
-    CANCELLED,
-    SKIPPED;
+    QUEUED, SCHEDULED, READY, ASSIGNED, COMPLETED, CANCELLED, SKIPPED;
 
     public boolean isFinished() {
-        return this == TaskStatus.COMPLETED
-                || this == TaskStatus.CANCELLED
-                || this == TaskStatus.SKIPPED;
+        return this == TaskStatus.COMPLETED || this == TaskStatus.CANCELLED || this == TaskStatus.SKIPPED;
     }
 
     public boolean isActive() {
-        return this == TaskStatus.READY
-                || this == TaskStatus.ASSIGNED;
+        return this == TaskStatus.READY || this == TaskStatus.ASSIGNED;
+    }
+
+    public boolean isScheduled() {
+        return this == TaskStatus.READY || this == TaskStatus.SCHEDULED;
     }
 
     public boolean isInactive() {

@@ -46,7 +46,7 @@ import java.util.Optional;
  * @param <E>
  * @param <S>
  */
-public interface CallbacksTable<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
+public interface TaskScheduler<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
 
     /**
      * Called when the dependencies of the stage are updated
@@ -78,17 +78,6 @@ public interface CallbacksTable<E extends Enum<E>, S extends FlowStage<E>, L ext
      * @return a new TaskSnapshot, the real task object is out of the this
      * library scope
      */
-    public TaskSnapshot activateRelatedTask(TasksWave<E, S, L> wave, S stage, Collection<L> incomings, Delay delay);
-
-    /**
-     * After the task has been completed
-     *
-     * @param wave container for the finished task
-     * @param result result of the task (either success or fail)
-     * @param stage origin of the task
-     * @return a new TaskWave if the stage was to be rescheduled at a later time
-     * or the same wave otherwise
-     */
-    public TasksWave<E, S, L> onEnd(TasksWave<E, S, L> wave, TaskResult result, S stage);
+    public TaskSnapshot scheduleTaskFor(TasksWave<E, S, L> wave, S stage, Collection<L> incomings, Delay delay);
 
 }

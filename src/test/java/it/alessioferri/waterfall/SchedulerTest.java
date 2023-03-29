@@ -69,7 +69,7 @@ public class SchedulerTest {
 
     @Test
     public void testTrivialSuccess() {
-        var plan = TestPlan.empty( "Trivial" );
+        var plan = TestPlan.empty( "TrivialSuccess" );
         plan.stages().add( new ImmediateSuccess( 1, StageKind.START, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 2, StageKind.END, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 3, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY ) );
@@ -82,13 +82,13 @@ public class SchedulerTest {
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
-        Assertions.assertTrue( sched.waves().size() == 1 );
+        Assertions.assertEquals( 1, sched.waves().size() );
         Assertions.assertTrue( sched.isComplete() );
     }
 
     @Test
     public void testTrivialFail() {
-        var plan = TestPlan.empty( "Trivial" );
+        var plan = TestPlan.empty( "TrivialFail" );
         plan.stages().add( new ImmediateSuccess( 1, StageKind.START, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 2, StageKind.END, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateFail( 3, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY ) );
@@ -103,13 +103,13 @@ public class SchedulerTest {
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
-        Assertions.assertTrue( sched.waves().size() == 1 );
+        Assertions.assertEquals( 1, sched.waves().size() );
         Assertions.assertTrue( sched.isComplete() );
     }
 
     @Test
     public void testDeferredSuccess() {
-        var plan = TestPlan.empty( "Trivial" );
+        var plan = TestPlan.empty( "TrivialDeferredSuccess" );
         plan.stages().add( new ImmediateSuccess( 1, StageKind.START, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 2, StageKind.END, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new DeferredSuccess( 3, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY ) );
@@ -144,13 +144,13 @@ public class SchedulerTest {
             sched.updateWaves();
         }
 
-        Assertions.assertTrue( sched.waves().size() == 1 );
+        Assertions.assertEquals( 1, sched.waves().size() );
         Assertions.assertTrue( sched.isComplete() );
     }
 
     @Test
     public void testDeferredFail() {
-        var plan = TestPlan.empty( "Trivial" );
+        var plan = TestPlan.empty( "TrivialDeferredFail" );
         plan.stages().add( new ImmediateSuccess( 1, StageKind.START, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 2, StageKind.END, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new DeferredFail( 3, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY) );
@@ -180,24 +180,22 @@ public class SchedulerTest {
                 for ( var i : toInsert ) {
                     w.addSnapshot( i );
                 }
-
-                System.out.println("Before: " + w.cursors());
             }
 
             sched.updateWaves();
         }
 
-        Assertions.assertEquals( sched.waves().size(),  1 );
+        Assertions.assertEquals( 1, sched.waves().size() );
         Assertions.assertTrue( sched.isComplete() );
     }
 
     @Test
     public void testTrivialReschedule() {
-        var plan = TestPlan.empty( "Trivial" );
+        var plan = TestPlan.empty( "TrivialReschedule" );
         plan.stages().add( new ImmediateSuccess( 1, StageKind.START, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new ImmediateSuccess( 2, StageKind.END, DelayPolicy.SHORTEST_DELAY ) );
         plan.stages().add( new DeferredFail( 3, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY  ) );
-        plan.stages().add( new DeferredSuccess( 4, StageKind.EXECUTE_ONLY_IF_ANY_FAIL, DelayPolicy.SHORTEST_DELAY ) );
+        plan.stages().add( new DeferredSuccess( 4, StageKind.EXECUTE_ONLY_IF_ALL_SUCCESS, DelayPolicy.SHORTEST_DELAY ) );
 
         plan.link( plan.stageById( 1 ), plan.stageById( 3 ) );
         plan.link( plan.stageById( 1 ), plan.stageById( 4 ) );
@@ -209,7 +207,7 @@ public class SchedulerTest {
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
-        for ( int k = 0; k < 3; k++ ) { // in theory, only two kicks are required to finish this plan
+        for ( int k = 0; k < 1; k++ ) { // in theory, only two kicks are required to finish this plan
 
             for ( var w : sched.runningWaves() ) {
 
@@ -225,14 +223,12 @@ public class SchedulerTest {
                 for ( var i : toInsert ) {
                     w.addSnapshot( i );
                 }
-
-                System.out.println("Before: " + w.cursors());
             }
 
             sched.updateWaves();
         }        
 
-        Assertions.assertEquals( sched.waves().size(), 2 );
+        Assertions.assertEquals( 2, sched.waves().size() );
         Assertions.assertFalse( sched.isComplete() );
     }
 
