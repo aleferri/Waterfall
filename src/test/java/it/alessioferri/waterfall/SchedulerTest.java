@@ -129,7 +129,7 @@ public class SchedulerTest {
 
                 var toInsert = new ArrayList<TaskSnapshot>();
 
-                for ( var e : w.snapshot().entrySet() ) {
+                for ( var e : w.latestSnapshotByStage().entrySet() ) {
                     var s = e.getValue();
                     if ( s.status().isActive() ) {
                         toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
@@ -170,7 +170,7 @@ public class SchedulerTest {
 
                 var toInsert = new ArrayList<TaskSnapshot>();
 
-                for ( var e : w.snapshot().entrySet() ) {
+                for ( var e : w.latestSnapshotByStage().entrySet() ) {
                     var s = e.getValue();
                     if ( s.status().isActive() ) {
                         toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
@@ -213,7 +213,7 @@ public class SchedulerTest {
 
                 var toInsert = new ArrayList<TaskSnapshot>();
 
-                for ( var e : w.snapshot().entrySet() ) {
+                for ( var e : w.latestSnapshotByStage().entrySet() ) {
                     var s = e.getValue();
                     if ( s.status().isActive() ) {
                         toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );

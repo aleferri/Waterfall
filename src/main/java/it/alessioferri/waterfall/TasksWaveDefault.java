@@ -51,27 +51,14 @@ import java.util.Map;
  * @param <B>
  * @param <L>
  */
-public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L extends Link>(
-        long waveId,
-        long parentWaveId,
-        LocalDate startedAt,
-        Map<String, Object> resources,
-        Map<String, Object> scratchpad,
-        Map<Long, TaskSnapshot> snapshot,
-        Collection<TaskSnapshot> history,
-        List<Long> cursors) implements TasksWave<E, B, L> {
+public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L extends Link>(long waveId,
+        long parentWaveId, LocalDate startedAt, Map<String, Object> resources, Map<String, Object> scratchpad,
+        Collection<TaskSnapshot> history, List<Long> cursors) implements TasksWave<E, B, L> {
 
-    public static <E extends Enum<E>, B extends FlowStage<E>, L extends Link> TasksWaveDefault<E, B, L> initWave(long waveId, long parentWaveId) {
-        return new TasksWaveDefault<>(
-                waveId,
-                parentWaveId,
-                LocalDate.now(),
-                new HashMap<>(),
-                new HashMap<>(),
-                new HashMap<>(),
-                new ArrayList<>(),
-                new ArrayList<>()
-        );
+    public static <E extends Enum<E>, B extends FlowStage<E>, L extends Link> TasksWaveDefault<E, B, L> initWave(
+            long waveId, long parentWaveId) {
+        return new TasksWaveDefault<>( waveId, parentWaveId, LocalDate.now(), new HashMap<>(), new HashMap<>(),
+                new ArrayList<>(), new ArrayList<>() );
     }
 
     @Override
@@ -90,34 +77,48 @@ public record TasksWaveDefault<E extends Enum<E>, B extends FlowStage<E>, L exte
     @Override
     public void addSnapshot(TaskSnapshot snapshot) {
         this.history.add( snapshot );
-        this.snapshot.put( snapshot.stageId(), snapshot );
     }
 
     @Override
     public TasksWave<E, B, L> withWaveId(long waveId) {
-        return new TasksWaveDefault<>( waveId, parentWaveId, startedAt, resources, scratchpad, snapshot, history, cursors );
+        return new TasksWaveDefault<>( waveId, parentWaveId, startedAt, resources, scratchpad, history, cursors );
     }
 
     @Override
     public TaskSnapshot snapshotOfStage(long stageId) {
-        var stageSnapshot = this.snapshot.get( stageId );
 
-        if ( snapshot != null ) {
-            return stageSnapshot;
+        TaskSnapshot latest = null;
+
+        for ( var e : this.history ) {
+            if ( e.stageId() == stageId ) {
+                latest = e;
+            }
         }
 
-        throw new RuntimeException( "cannot find stage id, you did something wrong to the wave state or you are using the wrong API" );
+        if ( latest != null ) {
+            return latest;
+        }
+
+        throw new RuntimeException(
+                "cannot find stage id, you did something wrong to the wave state or you are using the wrong API" );
     }
 
     @Override
     public TaskSnapshot snapshotOfTask(long taskId) {
-        for ( var e : this.snapshot.entrySet() ) {
-            if ( e.getValue().taskId() == taskId ) {
-                return e.getValue();
+        TaskSnapshot latest = null;
+
+        for ( var e : this.history ) {
+            if ( e.taskId() == taskId ) {
+                latest = e;
             }
         }
 
-        throw new RuntimeException( "cannot find task id, you did something wrong to the wave state or you are using the wrong API" );
+        if ( latest != null ) {
+            return latest;
+        }
+
+        throw new RuntimeException(
+                "cannot find task id, you did something wrong to the wave state or you are using the wrong API" );
     }
 
 }

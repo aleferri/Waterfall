@@ -39,8 +39,11 @@ package it.alessioferri.waterfall;
  */
 import java.time.LocalDate;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Alessio
@@ -93,13 +96,6 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
     public List<Long> cursors();
 
     /**
-     * Latest snapshot of all tasks by its' stage id
-     *
-     * @return
-     */
-    public Map<Long, TaskSnapshot> snapshot();
-
-    /**
      * History of all snapshot
      *
      * @return
@@ -131,19 +127,43 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
     public TaskSnapshot snapshotOfTask(long taskId);
 
     /**
+     * Latest snapshot by stage id
+     * @return
+     */
+    public default HashMap<Long, TaskSnapshot> latestSnapshotByStage() {
+        var map = new HashMap<Long, TaskSnapshot>();
+
+        for (var e : this.history()) {
+            map.put(e.stageId(), e);
+        }
+
+        return map;
+    }
+
+    /**
+     * Latest snapshot by task id
+     * @return
+     */
+    public default HashMap<Long, TaskSnapshot> latestSnapshotByTask() {
+        var map = new HashMap<Long, TaskSnapshot>();
+
+        for (var e : this.history()) {
+            map.put(e.taskId(), e);
+        }
+
+        return map;
+    }
+
+    /**
      * Check if exists a related task for the speficied stage
      *
      * @param stageId id of the stage
      * @return if the stage has a related task
      */
     public default boolean hasRelatedTask(long stageId) {
-        for ( var s : this.snapshot().entrySet() ) {
-            var val = s.getValue();
-            if ( val.stageId() == stageId && val.status() != TaskStatus.SKIPPED ) {
-                return true;
-            }
-        }
-        return false;
+        var val = this.snapshotOfStage(stageId);
+        
+        return val.status() != TaskStatus.SKIPPED;
     }
 
     /**
