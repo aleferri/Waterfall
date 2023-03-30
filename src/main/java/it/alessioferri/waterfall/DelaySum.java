@@ -20,22 +20,28 @@ package it.alessioferri.waterfall;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.time.LocalDate;
 
-public record WaveStartData<E extends Enum<E>, S extends FlowStage<E>>(long parentWave, Delay waveDelay,
-        Collection<S> startSet) {
+/**
+ * Very easy recursive implementation of Delay sum
+ * @param a first Delay
+ * @param b second Delay
+ */
+public record DelaySum(Delay a, Delay b) implements Delay {
 
-    @SafeVarargs
-    public static <E extends Enum<E>, S extends FlowStage<E>> WaveStartData<E, S> prepare(long parentWave,
-            Delay waveDelay, S... set) {
-        var l = new ArrayList<S>();
+    @Override
+    public LocalDate addTo(LocalDate date) {
+        return b.addTo( a.addTo( date ) );
+    }
 
-        for ( var s : set ) {
-            l.add( s );
-        }
+    @Override
+    public Delay add(Delay b) {
+        return new DelaySum( this, b );
+    }
 
-        return new WaveStartData<>( parentWave, waveDelay, l );
+    @Override
+    public boolean isNone() {
+        return a.isNone() && b.isNone();
     }
 
 }

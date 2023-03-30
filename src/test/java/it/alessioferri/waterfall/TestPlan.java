@@ -56,7 +56,7 @@ public record TestPlan(String title, Collection<Stage> stages, Collection<TestLi
     }
 
     public void link(Stage a, Stage b) {
-        this.links.add( new TestLink( a.stageId(), b.stageId(), Delay.none() ) );
+        this.links.add( new TestLink( a.stageId(), b.stageId(), DelayDate.none() ) );
     }
 
     @Override

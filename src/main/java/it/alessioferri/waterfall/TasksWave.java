@@ -38,12 +38,11 @@ package it.alessioferri.waterfall;
  * #L%
  */
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Alessio
@@ -128,13 +127,14 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
 
     /**
      * Latest snapshot by stage id
+     * 
      * @return
      */
     public default HashMap<Long, TaskSnapshot> latestSnapshotByStage() {
         var map = new HashMap<Long, TaskSnapshot>();
 
-        for (var e : this.history()) {
-            map.put(e.stageId(), e);
+        for ( var e : this.history() ) {
+            map.put( e.stageId(), e );
         }
 
         return map;
@@ -142,13 +142,14 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
 
     /**
      * Latest snapshot by task id
+     * 
      * @return
      */
     public default HashMap<Long, TaskSnapshot> latestSnapshotByTask() {
         var map = new HashMap<Long, TaskSnapshot>();
 
-        for (var e : this.history()) {
-            map.put(e.taskId(), e);
+        for ( var e : this.history() ) {
+            map.put( e.taskId(), e );
         }
 
         return map;
@@ -161,9 +162,13 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
      * @return if the stage has a related task
      */
     public default boolean hasRelatedTask(long stageId) {
-        var val = this.snapshotOfStage(stageId);
-        
-        return val.status() != TaskStatus.SKIPPED;
+        for ( var s : this.history() ) {
+            if ( s.stageId() == stageId && s.status() != TaskStatus.SKIPPED ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -202,31 +207,45 @@ public interface TasksWave<E extends Enum<E>, S extends FlowStage<E>, L extends 
 
     public default Delay selectDelayFor(S s, DelayPolicy policy, Collection<L> incomings, TaskResult target) {
         if ( incomings.isEmpty() ) {
-            return Delay.none();
+            return DelayDate.none();
         }
 
-        var delay = policy == DelayPolicy.SHORTEST_DELAY ? Delay.max() : Delay.none();
+        Delay delay = policy == DelayPolicy.SHORTEST_DELAY ? DelayDate.max() : DelayDate.none();
 
-        for (var i : incomings) {
+        for ( var i : incomings ) {
 
-            var status = this.snapshotOfStage(i.from());
+            var status = this.snapshotOfStage( i.from() );
 
             if ( !status.status().isFinished() || status.result() != target ) {
                 continue;
             }
 
             if ( policy == DelayPolicy.SHORTEST_DELAY ) {
-                if ( i.delay().lessThan(delay) ) {
+                if ( i.delay().lessThan( delay ) ) {
                     delay = i.delay();
                 }
             } else {
-                if ( i.delay().greaterThan(delay) ) {
+                if ( i.delay().greaterThan( delay ) ) {
                     delay = i.delay();
                 }
             }
         }
 
         return delay;
+    }
+
+    public default DependenciesInfo queryDependenciesInfo(Collection<Long> stagesId) {
+        var list = new ArrayList<TaskSnapshot>();
+
+        for ( var id : stagesId ) {
+            if ( this.hasRelatedTask( id ) ) {
+                list.add( this.snapshotOfStage( id ) );
+            } else {
+                list.add( TaskSnapshot.queued( id ) );
+            }
+        }
+
+        return new DependenciesInfo( list );
     }
 
 }

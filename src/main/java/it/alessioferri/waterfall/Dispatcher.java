@@ -50,6 +50,16 @@ public interface Dispatcher<E extends Enum<E>, S extends FlowStage<E>, L extends
      * @param kind
      * @return
      */
-    public TaskScheduler<E, S, L> callbacksFor(E kind);
+    public TaskScheduler<E, S, L> schedulerFor(E kind);
+
+    /**
+     * Take snapshot at the current task status
+     * 
+     * @param wave relate wave
+     * @param stage related stage
+     * @param taskId id of the task to take snapshot
+     * @return the current snapshot
+     */
+    public TaskSnapshot takeSnapshot(TasksWave<E, S, L> wave, S stage, long taskId);
 
 }

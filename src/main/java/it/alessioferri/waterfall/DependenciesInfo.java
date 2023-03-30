@@ -20,22 +20,38 @@ package it.alessioferri.waterfall;
  * #L%
  */
 
-import java.util.ArrayList;
 import java.util.Collection;
 
-public record WaveStartData<E extends Enum<E>, S extends FlowStage<E>>(long parentWave, Delay waveDelay,
-        Collection<S> startSet) {
+public record DependenciesInfo(Collection<TaskSnapshot> deps) {
 
-    @SafeVarargs
-    public static <E extends Enum<E>, S extends FlowStage<E>> WaveStartData<E, S> prepare(long parentWave,
-            Delay waveDelay, S... set) {
-        var l = new ArrayList<S>();
+    public boolean allDidResolveAs(TaskResult target) {
+        boolean ok = true;
 
-        for ( var s : set ) {
-            l.add( s );
+        for (var t : deps) {
+            ok = ok && t.status().isFinished() && t.result() == target;
         }
 
-        return new WaveStartData<>( parentWave, waveDelay, l );
+        return ok;
+    }
+
+    public boolean allDidResolve() {
+        boolean ok = true;
+
+        for (var t : deps) {
+            ok = ok && t.status().isFinished();
+        }
+
+        return ok;
+    }
+
+    public boolean anyDidResolveAs(TaskResult target) {
+        boolean ok = false;
+
+        for (var t : deps) {
+            ok = ok || t.status().isFinished() && t.result() == target;
+        }
+
+        return ok;
     }
 
 }

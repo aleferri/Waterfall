@@ -37,7 +37,6 @@ package it.alessioferri.waterfall;
  * limitations under the License.
  * #L%
  */
-import java.util.ArrayList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +76,7 @@ public class SchedulerTest {
         plan.link( plan.stageById( 1 ), plan.stageById( 3 ) );
         plan.link( plan.stageById( 3 ), plan.stageById( 2 ) );
 
-        var dispatcher = new TestCallbacks( this::supplyId );
+        var dispatcher = TestCallbacks.of( this::supplyId );
         var log = LoggerFactory.getLogger( SchedulerTest.class );
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
@@ -98,7 +97,7 @@ public class SchedulerTest {
         plan.link( plan.stageById( 3 ), plan.stageById( 4 ) );
         plan.link( plan.stageById( 4 ), plan.stageById( 2 ) );
 
-        var dispatcher = new TestCallbacks( this::supplyId );
+        var dispatcher = TestCallbacks.of( this::supplyId );;
         var log = LoggerFactory.getLogger( SchedulerTest.class );
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
@@ -119,28 +118,13 @@ public class SchedulerTest {
         plan.link( plan.stageById( 3 ), plan.stageById( 4 ) );
         plan.link( plan.stageById( 4 ), plan.stageById( 2 ) );
 
-        var dispatcher = new TestCallbacks( this::supplyId );
+        var dispatcher = TestCallbacks.of( this::supplyId );;
         var log = LoggerFactory.getLogger( SchedulerTest.class );
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
         for ( int k = 0; k < 2; k++ ) { // in theory, only two kicks are required to finish this plan
-            for ( var w : sched.runningWaves() ) {
-
-                var toInsert = new ArrayList<TaskSnapshot>();
-
-                for ( var e : w.latestSnapshotByStage().entrySet() ) {
-                    var s = e.getValue();
-                    if ( s.status().isActive() ) {
-                        toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
-                    }
-                }
-
-                for ( var i : toInsert ) {
-                    w.addSnapshot( i );
-                }
-            }
-
+            sched.pollSnapshotsUpdates();
             sched.updateWaves();
         }
 
@@ -160,28 +144,13 @@ public class SchedulerTest {
         plan.link( plan.stageById( 3 ), plan.stageById( 4 ) );
         plan.link( plan.stageById( 4 ), plan.stageById( 2 ) );
 
-        var dispatcher = new TestCallbacks( this::supplyId );
+        var dispatcher = TestCallbacks.of( this::supplyId );;
         var log = LoggerFactory.getLogger( SchedulerTest.class );
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
         for ( int k = 0; k < 2; k++ ) { // in theory, only two kicks are required to finish this plan
-            for ( var w : sched.runningWaves() ) {
-
-                var toInsert = new ArrayList<TaskSnapshot>();
-
-                for ( var e : w.latestSnapshotByStage().entrySet() ) {
-                    var s = e.getValue();
-                    if ( s.status().isActive() ) {
-                        toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
-                    }
-                }
-
-                for ( var i : toInsert ) {
-                    w.addSnapshot( i );
-                }
-            }
-
+            sched.pollSnapshotsUpdates();
             sched.updateWaves();
         }
 
@@ -200,31 +169,15 @@ public class SchedulerTest {
         plan.link( plan.stageById( 1 ), plan.stageById( 3 ) );
         plan.link( plan.stageById( 1 ), plan.stageById( 4 ) );
         plan.link( plan.stageById( 4 ), plan.stageById( 2 ) );
-        plan.link( plan.stageById( 4 ), plan.stageById( 1 ), new Delay(0, 0, 1) );
+        plan.link( plan.stageById( 4 ), plan.stageById( 1 ), new DelayDate(0, 0, 1) );
 
-        var dispatcher = new TestCallbacks( this::supplyId );
+        var dispatcher = TestCallbacks.of( this::supplyId );
         var log = LoggerFactory.getLogger( SchedulerTest.class );
 
         var sched = SchedulerDefault.<StageKind, Stage, TestLink>kickoff( plan, dispatcher, log );
 
         for ( int k = 0; k < 1; k++ ) { // in theory, only two kicks are required to finish this plan
-
-            for ( var w : sched.runningWaves() ) {
-
-                var toInsert = new ArrayList<TaskSnapshot>();
-
-                for ( var e : w.latestSnapshotByStage().entrySet() ) {
-                    var s = e.getValue();
-                    if ( s.status().isActive() ) {
-                        toInsert.add( dispatcher.advanceTask( s.taskId(), plan.stageById( s.stageId() ) ) );
-                    }
-                }
-
-                for ( var i : toInsert ) {
-                    w.addSnapshot( i );
-                }
-            }
-
+            sched.pollSnapshotsUpdates();
             sched.updateWaves();
         }        
 

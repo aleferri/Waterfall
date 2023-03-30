@@ -70,7 +70,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
             FlowPlan<E, S, L> plan, Dispatcher<E, S, L> dispatcher, Logger log) {
         var scheduler = new SchedulerDefault<E, S, L>( plan, plan.sequenceStages(), new ArrayList<>(), dispatcher,
                 log );
-        var entry = scheduler.kickoffWave( 0, -1, Delay.none(), plan.startSet() );
+        var entry = scheduler.kickoffWave( 0, -1, DelayDate.none(), plan.startSet() );
         scheduler.waves.add( entry );
         scheduler.updateWaves();
 
@@ -131,7 +131,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
 
             this.markReachableSet( reachableSet, e );
 
-            var snapshot = this.dispatcher.callbacksFor( e.kind() ).scheduleTaskFor( wave, e, Collections.emptyList(),
+            var snapshot = this.dispatcher.schedulerFor( e.kind() ).scheduleTaskFor( wave, e, Collections.emptyList(),
                     waveDelay );
             wave.addSnapshot( snapshot );
             wave.cursors().add( e.stageId() );
@@ -165,13 +165,14 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
 
             var taskSnapshot = t.snapshotOfStage( stage.stageId() );
 
-            System.out.println( this.plan.title() + " cursor: " + cursor + ", Task status is: " + taskSnapshot.status().name() );
+            System.out.println(
+                    this.plan.title() + " cursor: " + cursor + ", Task status is: " + taskSnapshot.status().name() );
             log.debug( "Task status is: " + taskSnapshot.status().name() );
 
             if ( taskSnapshot.status().isFinished() ) {
 
                 var links = this.plan.outgoings( stage );
-                System.out.println("Outgoings: " + links);
+                System.out.println( "Outgoings: " + links );
 
                 for ( var link : links ) {
 
@@ -183,7 +184,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
                         deps.add( incoming.from() );
                     }
 
-                    var callbacks = this.dispatcher.callbacksFor( next.kind() );
+                    var callbacks = this.dispatcher.schedulerFor( next.kind() );
 
                     if ( this.isBackwardLink( link ) ) {
                         var maybeNewWave = callbacks.onBackwardLinkUpdate( t, next, incomings, link.from() );
@@ -198,7 +199,7 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
                         var result = callbacks.onDepsUpdates( t, next, deps );
 
                         if ( result.canActivate() ) {
-                            var snapshot = callbacks.scheduleTaskFor( t, next, incomings, Delay.none() );
+                            var snapshot = callbacks.scheduleTaskFor( t, next, incomings, DelayDate.none() );
                             t.addSnapshot( snapshot );
                             t.cursors().add( next.stageId() );
                         }
@@ -254,6 +255,21 @@ public record SchedulerDefault<E extends Enum<E>, S extends FlowStage<E>, L exte
         }
 
         return list;
+    }
+
+    @Override
+    public void pollSnapshotsUpdates() {
+        for ( var w : this.waves ) {
+            var latest = w.latestSnapshotByTask();
+
+            for ( var t : latest.keySet() ) {
+                var s = latest.get( t );
+                var n = this.dispatcher.takeSnapshot( w, this.plan.stageById( s.stageId() ), t );
+                if ( n.status() != s.status() ) {
+                    w.addSnapshot( n );
+                }
+            }
+        }
     }
 
 }

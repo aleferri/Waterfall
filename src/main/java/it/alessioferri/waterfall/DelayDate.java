@@ -27,9 +27,9 @@ package it.alessioferri.waterfall;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,57 +37,54 @@ package it.alessioferri.waterfall;
  * limitations under the License.
  * #L%
  */
+
 import java.time.LocalDate;
-import java.util.Collection;
+import java.time.temporal.ChronoUnit;
 
 /**
+ *
  * @author Alessio
- * @param <E>
- * @param <S>
- * @param <L>
  */
-public interface Scheduler<E extends Enum<E>, S extends FlowStage<E>, L extends Link> {
+public record DelayDate(int years, int months, int days) implements Delay {
 
     /**
-     * Started at
-     *
+     * Max delay possible
+     */
+    public static DelayDate max() {
+        return new DelayDate( 99999, 0, 0 );
+    }
+
+    /**
+     * None delay
+     * @return a "none" delay
+     */
+    public static DelayDate none() {
+        return new DelayDate( 0, 0, 0 );
+    }
+
+    /**
+     * Delay until the specified date
+     * @param to
      * @return
      */
-    public LocalDate startedAt();
+    public static DelayDate until(LocalDate to) {
+        var now = LocalDate.now();
 
-    /**
-     * Update all the waves
-     *
-     * @return
-     */
-    public Scheduler<E, S, L> updateWaves();
+        long days = ChronoUnit.DAYS.between( now, to );
 
-    /**
-     * All waves
-     *
-     * @return
-     */
-    public Collection<TasksWave<E, S, L>> waves();
+        return new DelayDate( 0, 0, ( int ) days );
+    }
 
-    /**
-     * Running waves
-     *
-     * @return
-     */
-    public Collection<TasksWave<E, S, L>> runningWaves();
+    public LocalDate addTo(LocalDate date) {
+        return date.plusYears( years ).plusMonths( months ).plusDays( days );
+    }
 
-    /**
-     * Request this object to poll new snapshots of the active tasks
-     */
-    public void pollSnapshotsUpdates();
+    public boolean isNone() {
+        return years == 0 && months == 0 && days == 0;
+    }
 
-    /**
-     * Is complete
-     *
-     * @return true if nothing need to be scheduled
-     */
-    public default boolean isComplete() {
-        return this.runningWaves().isEmpty();
+    public Delay add(Delay b) {
+        return new DelaySum(this, b);
     }
 
 }

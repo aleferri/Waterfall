@@ -50,7 +50,7 @@ public record TaskSnapshot(long taskId, long stageId, LocalDate takenAt, TaskSta
     }
 
     public static TaskSnapshot scheduledLater(long taskId, long stageId, Delay delay) {
-        return new TaskSnapshot( taskId, stageId, delay.applyTo( LocalDate.now() ), TaskStatus.SCHEDULED,
+        return new TaskSnapshot( taskId, stageId, delay.addTo( LocalDate.now() ), TaskStatus.SCHEDULED,
                 TaskResult.NONE );
     }
 
@@ -64,6 +64,10 @@ public record TaskSnapshot(long taskId, long stageId, LocalDate takenAt, TaskSta
 
     public static TaskSnapshot skipped(long taskId, long stageId) {
         return new TaskSnapshot( taskId, stageId, LocalDate.now(), TaskStatus.SKIPPED, TaskResult.NONE );
+    }
+
+    public static TaskSnapshot queued(long stageId) {
+        return new TaskSnapshot( -1, stageId, LocalDate.now(), TaskStatus.QUEUED, TaskResult.NONE );
     }
 
 }

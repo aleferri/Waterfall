@@ -19,6 +19,7 @@
 package it.alessioferri.waterfall;
 
 import java.util.Collection;
+import java.util.HashMap;
 /*-
  * #%L
  * Waterfall
@@ -39,6 +40,7 @@ import java.util.Collection;
  * #L%
  */
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -46,91 +48,59 @@ import java.util.function.Supplier;
  *
  * @author Alessio
  */
-public record TestCallbacks(Supplier<Long> taskIds)
+public record TestCallbacks(Supplier<Long> taskIds, Map<Long, TaskSnapshot> updates)
         implements TaskScheduler<StageKind, Stage, TestLink>, Dispatcher<StageKind, Stage, TestLink> {
+
+    public static TestCallbacks of(Supplier<Long> taskIds) {
+        return new TestCallbacks( taskIds, new HashMap<>() );
+    }
 
     @Override
     public StageStatus<StageKind, Stage, TestLink> onDepsUpdates(TasksWave<StageKind, Stage, TestLink> wave,
             Stage stage, List<Long> deps) {
-        switch (stage.kind() ) {
+        switch ( stage.kind() ) {
         case START -> {
             return new StageStatus<>( wave, true );
         }
         case EXECUTE_ONLY_IF_ALL_FAIL -> {
-            boolean allFailed = true;
-            boolean depsResolved = true;
+            var depsInfo = wave.queryDependenciesInfo( deps );
 
-            for (var dep : deps) {
-                if ( wave.hasRelatedTask( dep ) ) {
-                    var snapshot = wave.snapshotOfStage( dep );
-                    allFailed = allFailed && snapshot.status().isFinished() && snapshot.result() == TaskResult.FAIL;
-                } else {
-                    allFailed = false;
-                    depsResolved = false;
-                }
-            }
+            var allFailed = depsInfo.allDidResolveAs( TaskResult.FAIL );
 
-            if ( depsResolved && !allFailed ) {
+            if ( depsInfo.allDidResolve() && !allFailed ) {
                 wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
             }
 
             return new StageStatus<>( wave, allFailed );
         }
         case EXECUTE_ONLY_IF_ALL_SUCCESS -> {
-            boolean allSuccess = true;
-            boolean depsResolved = true;
+            var depsInfo = wave.queryDependenciesInfo( deps );
 
-            for (var dep : deps) {
-                if ( wave.hasRelatedTask( dep ) ) {
-                    var snapshot = wave.snapshotOfStage( dep );
-                    allSuccess = allSuccess && snapshot.status().isFinished()
-                            && snapshot.result() == TaskResult.SUCCESS;
-                } else {
-                    allSuccess = false;
-                    depsResolved = false;
-                }
-            }
+            boolean allSuccess = depsInfo.allDidResolveAs( TaskResult.SUCCESS );
 
-            if ( depsResolved && !allSuccess ) {
+            if ( depsInfo.allDidResolve() && !allSuccess ) {
                 wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
             }
 
             return new StageStatus<>( wave, allSuccess );
         }
         case EXECUTE_ONLY_IF_ANY_SUCCESS -> {
-            boolean anySuccess = false;
-            boolean depsResolved = true;
+            var depsInfo = wave.queryDependenciesInfo( deps );
 
-            for (var dep : deps) {
-                if ( wave.hasRelatedTask( dep ) ) {
-                    var snapshot = wave.snapshotOfStage( dep );
-                    anySuccess = anySuccess
-                            || ( snapshot.status().isFinished() && snapshot.result() == TaskResult.SUCCESS);
-                } else {
-                    depsResolved = false;
-                }
-            }
+            boolean anySuccess = depsInfo.anyDidResolveAs( TaskResult.SUCCESS );
 
-            if ( depsResolved && !anySuccess ) {
+            if ( depsInfo.allDidResolve() && !anySuccess ) {
                 wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
             }
 
             return new StageStatus<>( wave, anySuccess );
         }
         case EXECUTE_ONLY_IF_ANY_FAIL -> {
-            boolean anyFail = false;
-            boolean depsResolved = true;
+            var depsInfo = wave.queryDependenciesInfo( deps );
 
-            for (var dep : deps) {
-                if ( wave.hasRelatedTask( dep ) ) {
-                    var snapshot = wave.snapshotOfStage( dep );
-                    anyFail = anyFail || ( snapshot.status().isFinished() && snapshot.result() == TaskResult.FAIL);
-                } else {
-                    depsResolved = false;
-                }
-            }
+            boolean anyFail = depsInfo.anyDidResolveAs( TaskResult.SUCCESS );
 
-            if ( depsResolved && !anyFail ) {
+            if ( depsInfo.allDidResolve() && !anyFail ) {
                 wave.addSnapshot( TaskSnapshot.skipped( 0, stage.stageId() ) );
             }
 
@@ -149,7 +119,7 @@ public record TestCallbacks(Supplier<Long> taskIds)
 
         Delay delaySum = delay;
 
-        switch (stage.kind() ) {
+        switch ( stage.kind() ) {
         case EXECUTE_ONLY_IF_ALL_FAIL, EXECUTE_ONLY_IF_ANY_FAIL -> {
             delaySum = delay.add( wave.selectDelayFor( stage, stage.delayPolicy(), incomings, TaskResult.FAIL ) );
         }
@@ -189,16 +159,16 @@ public record TestCallbacks(Supplier<Long> taskIds)
     }
 
     @Override
-    public TaskScheduler<StageKind, Stage, TestLink> callbacksFor(StageKind kind) {
+    public TaskScheduler<StageKind, Stage, TestLink> schedulerFor(StageKind kind) {
         return this;
     }
 
     @Override
     public Optional<WaveStartData<StageKind, Stage>> onBackwardLinkUpdate(TasksWave<StageKind, Stage, TestLink> wave,
             Stage stage, Collection<TestLink> incomings, long linkDep) {
-        switch (stage.kind() ) {
+        switch ( stage.kind() ) {
         case START, END -> {
-            return Optional.of( WaveStartData.prepare( wave.waveId(), Delay.none(), stage ) );
+            return Optional.of( WaveStartData.prepare( wave.waveId(), DelayDate.none(), stage ) );
         }
         case EXECUTE_ONLY_IF_ALL_FAIL, EXECUTE_ONLY_IF_ALL_SUCCESS -> {
             return Optional.empty();
@@ -210,7 +180,7 @@ public record TestCallbacks(Supplier<Long> taskIds)
                 var anySuccess = snapshot.status().isFinished() && snapshot.result() == TaskResult.SUCCESS;
 
                 if ( anySuccess ) {
-                    return Optional.of( WaveStartData.prepare( wave.waveId(), Delay.none(), stage ) );
+                    return Optional.of( WaveStartData.prepare( wave.waveId(), DelayDate.none(), stage ) );
                 }
 
             }
@@ -224,7 +194,7 @@ public record TestCallbacks(Supplier<Long> taskIds)
                 var anyFail = snapshot.status().isFinished() && snapshot.result() == TaskResult.FAIL;
 
                 if ( anyFail ) {
-                    return Optional.of( WaveStartData.prepare( wave.waveId(), Delay.none(), stage ) );
+                    return Optional.of( WaveStartData.prepare( wave.waveId(), DelayDate.none(), stage ) );
                 }
 
             }
@@ -233,6 +203,16 @@ public record TestCallbacks(Supplier<Long> taskIds)
         }
         default -> throw new AssertionError( stage.kind().name() );
         }
+    }
+
+    @Override
+    public TaskSnapshot takeSnapshot(TasksWave<StageKind, Stage, TestLink> wave, Stage stage, long taskId) {
+        var currentSnapshot = wave.snapshotOfTask( taskId );
+        if ( !currentSnapshot.status().isActive() ) {
+            return currentSnapshot;
+        }
+
+        return this.advanceTask( taskId, stage );
     }
 
 }
